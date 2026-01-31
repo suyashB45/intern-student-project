@@ -119,7 +119,8 @@ export default function Practice() {
     const handleStartSession = async (data: {
         role: string
         ai_role: string
-        scenario: string
+        scenario: string // This is the context/prompt
+        title: string   // This is the display name
         scenario_type?: string
         ai_character?: string
     }) => {
@@ -141,11 +142,12 @@ export default function Practice() {
                 body: JSON.stringify({
                     role: data.role,
                     ai_role: data.ai_role,
-                    scenario: data.scenario,
+                    scenario: data.title, // Send TITLE as the name for DB
+                    context: data.scenario, // Send PROMPT/CONTEXT for AI
                     framework: 'auto',
                     scenario_type: data.scenario_type,
-                    user_id: user.id,  // Use Supabase user ID
-                    ai_character: data.ai_character || selectedCharacter // Pass character choice
+                    user_id: user.id,
+                    ai_character: data.ai_character || selectedCharacter
                 })
             })
 
@@ -163,13 +165,13 @@ export default function Practice() {
                 JSON.stringify({
                     role: data.role,
                     ai_role: data.ai_role,
-                    scenario: data.scenario,
+                    scenario: data.title, // Store Title in local storage for consistency
                     createdAt: new Date().toISOString(),
                     transcript: [{ role: "assistant", content: summary }],
                     sessionId: session_id,
                     completed: false,
                     scenario_type: result.scenario_type || 'custom',
-                    ai_character: result.ai_character || data.ai_character // Prioritize backend confirmation
+                    ai_character: result.ai_character || data.ai_character
                 }),
             )
 
@@ -399,6 +401,7 @@ export default function Practice() {
                                                     role: scenario.user_role,
                                                     ai_role: displayAiRole,
                                                     scenario: scenario.scenario,
+                                                    title: scenario.title, // Pass the Title
                                                     scenario_type: scenario.scenario_type,
                                                     ai_character: selectedCharacter
                                                 })}

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Star, Users, Zap } from 'lucide-react';
+import { ArrowRight, Star } from 'lucide-react';
 import Scene3D from './Scene3D';
 import { useNavigate } from 'react-router-dom';
 

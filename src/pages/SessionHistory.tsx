@@ -16,6 +16,7 @@ interface SessionItem {
     role: string
     ai_role: string
     scenario: string
+    topic: string
     completed: boolean
     fit_score: number
 }
@@ -65,7 +66,8 @@ export default function SessionHistory() {
                     created_at: s.date || s.created_at,
                     role: s.role,
                     ai_role: s.ai_role,
-                    scenario: s.scenario_type || s.scenario,
+                    scenario: s.scenario || "Untitled Scenario",
+                    topic: s.scenario_type || "General",
                     completed: s.completed,
                     fit_score: s.score || s.fit_score || 0
                 }))
@@ -156,7 +158,7 @@ export default function SessionHistory() {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.05 }}
                                 whileHover={{ y: -4, scale: 1.01 }}
-                                className="group relative card-ultra-glass p-6 md:p-8 flex flex-col md:flex-row gap-8 md:items-center justify-between hover:border-primary/30 transition-all duration-300 max-w-[700px] mx-auto w-full"
+                                className="group relative card-ultra-glass p-6 md:p-8 flex flex-col md:flex-row gap-8 md:items-center justify-between hover:border-primary/30 transition-all duration-300 max-w-[800px] mx-auto w-full"
                             >
                                 {/* Subtle hover glow */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl pointer-events-none" />
@@ -175,27 +177,38 @@ export default function SessionHistory() {
                                                 <PlayCircle className="w-3.5 h-3.5" /> In Progress
                                             </span>
                                         )}
+                                        {/* Topic Badge */}
+                                        <span className="text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
+                                            {session.topic.toUpperCase()}
+                                        </span>
                                     </div>
 
                                     <div>
-                                        <h3 className="text-2xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
+                                        <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors">
                                             {session.scenario}
                                         </h3>
-                                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                                            <div className="flex items-center gap-1.5">
-                                                <User className="w-4 h-4 text-primary" />
-                                                <span className="text-muted-foreground">You: {session.role}</span>
+
+                                        {/* Explicit Details Grid */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border border-border/50">
+                                            <div>
+                                                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">User Role</div>
+                                                <div className="flex items-center gap-2 text-sm font-medium">
+                                                    <User className="w-4 h-4 text-primary" />
+                                                    {session.role}
+                                                </div>
                                             </div>
-                                            <div className="w-1 h-1 bg-border rounded-full hidden md:block" />
-                                            <div className="flex items-center gap-1.5">
-                                                <Bot className="w-4 h-4 text-purple-400" />
-                                                <span className="text-muted-foreground">AI: {session.ai_role}</span>
+                                            <div>
+                                                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">AI Role</div>
+                                                <div className="flex items-center gap-2 text-sm font-medium">
+                                                    <Bot className="w-4 h-4 text-purple-400" />
+                                                    {session.ai_role}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-6 justify-between md:justify-end border-t md:border-t-0 border-border/50 pt-4 md:pt-0">
+                                <div className="flex items-center gap-6 justify-between md:justify-end md:flex-col lg:flex-row border-t md:border-t-0 border-border/50 pt-4 md:pt-0">
                                     {session.completed && session.fit_score > 0 && (
                                         <div className="text-right">
                                             <div className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">Score</div>
