@@ -68,8 +68,10 @@ const Signup: React.FC = () => {
                 navigate('/login');
             }
         } catch (err: any) {
-            console.error(err);
-            toast.error(err.message || "Signup failed");
+            console.error('Signup error:', err);
+            const errorMessage = err?.message || err?.error_description || err?.error ||
+                (typeof err === 'string' ? err : "Signup failed. Please try again.");
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -89,15 +91,15 @@ const Signup: React.FC = () => {
                 className="w-full max-w-md card-ultra-glass relative z-10"
             >
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
+                    <h1 className="text-4xl font-bold text-foreground mb-2 tracking-tight">
                         Create <span className="text-ultra-gradient">Account</span>
                     </h1>
-                    <p className="text-gray-400">Join CoAct.AI and start your journey</p>
+                    <p className="text-muted-foreground">Join CoAct.AI and start your journey</p>
                 </div>
 
                 <form onSubmit={handleSignup} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300 ml-1">Full Name</label>
+                        <label className="text-sm font-medium text-muted-foreground ml-1">Full Name</label>
                         <div className="relative group">
                             <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 transition-colors w-5 h-5" />
                             <input
@@ -105,7 +107,7 @@ const Signup: React.FC = () => {
                                 name="full_name"
                                 type="text"
                                 required
-                                className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-10 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all font-sans"
+                                className="w-full bg-input/50 border border-input rounded-xl px-10 py-3 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all font-sans"
                                 value={formData.full_name}
                                 onChange={handleChange}
                                 placeholder="John Doe"
@@ -114,7 +116,7 @@ const Signup: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300 ml-1">Email address</label>
+                        <label className="text-sm font-medium text-muted-foreground ml-1">Email address</label>
                         <div className="relative group">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 transition-colors w-5 h-5" />
                             <input
@@ -123,7 +125,7 @@ const Signup: React.FC = () => {
                                 type="email"
                                 autoComplete="email"
                                 required
-                                className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-10 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all font-sans"
+                                className="w-full bg-input/50 border border-input rounded-xl px-10 py-3 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all font-sans"
                                 value={formData.email}
                                 onChange={handleChange}
                                 placeholder="name@company.com"
@@ -132,7 +134,7 @@ const Signup: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300 ml-1">Password</label>
+                        <label className="text-sm font-medium text-muted-foreground ml-1">Password</label>
                         <div className="relative group">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 transition-colors w-5 h-5" />
                             <input
@@ -140,7 +142,7 @@ const Signup: React.FC = () => {
                                 name="password"
                                 type={showPassword ? "text" : "password"}
                                 required
-                                className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-10 py-3 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all font-sans"
+                                className="w-full bg-input/50 border border-input rounded-xl px-10 py-3 pr-12 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all font-sans"
                                 value={formData.password}
                                 onChange={handleChange}
                                 placeholder="••••••••"
@@ -156,7 +158,7 @@ const Signup: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300 ml-1">Confirm Password</label>
+                        <label className="text-sm font-medium text-muted-foreground ml-1">Confirm Password</label>
                         <div className="relative group">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 transition-colors w-5 h-5" />
                             <input
@@ -164,7 +166,7 @@ const Signup: React.FC = () => {
                                 name="confirmPassword"
                                 type={showPassword ? "text" : "password"}
                                 required
-                                className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-10 py-3 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all font-sans"
+                                className="w-full bg-input/50 border border-input rounded-xl px-10 py-3 pr-12 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all font-sans"
                                 value={formData.confirmPassword}
                                 onChange={handleChange}
                                 placeholder="••••••••"
@@ -197,9 +199,9 @@ const Signup: React.FC = () => {
                 </form>
 
                 <div className="mt-6 text-center">
-                    <p className="text-gray-400 text-sm">
+                    <p className="text-muted-foreground text-sm">
                         Already have an account?{' '}
-                        <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium hover:underline transition-all">
+                        <Link to="/login" className="text-primary hover:text-primary/80 font-medium hover:underline transition-all">
                             Sign in
                         </Link>
                     </p>

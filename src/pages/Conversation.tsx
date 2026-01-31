@@ -20,6 +20,7 @@ interface SessionData {
     createdAt: string
     transcript: TranscriptMessage[]
     sessionId?: string
+    ai_character?: string
 }
 
 interface ConversationState {
@@ -80,83 +81,61 @@ export default function Conversation() {
     const [lastAudioUrl, setLastAudioUrl] = useState<string | null>(null)
     const audioRef = useRef<HTMLAudioElement | null>(null)
 
-    // Cached voice for consistent experience
-    const selectedVoiceRef = useRef<SpeechSynthesisVoice | null>(null)
+    // Audio playback for AI response
+    const aiAudioRef = useRef<HTMLAudioElement | null>(null)
 
-    const getConsistentVoice = () => {
-        if (selectedVoiceRef.current) return selectedVoiceRef.current
+    const speakText = async (text: string, forcedCharacter?: string) => {
+        try {
+            // Determine voice based on character
+            // Use forcedCharacter if provided (fixes race condition on mount)
+            const character = forcedCharacter || state.sessionData?.ai_character || 'alex'
+            const voice = character === 'alex' ? 'onyx' : 'nova'
 
-        const voices = window.speechSynthesis.getVoices()
+            setIsAiSpeaking(true)
 
-        // Prefer male voices for consistency (prioritized order)
-        const maleVoicePreferences = [
-            'Google UK English Male',
-            'Microsoft David',
-            'Microsoft Guy',
-            'Daniel',
-            'Alex',
-            'Google US English',
-            'Microsoft Mark'
-        ]
+            const response = await fetch(getApiUrl('/api/speak'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, voice })
+            })
 
-        let voice = null
-        for (const pref of maleVoicePreferences) {
-            voice = voices.find(v => v.name.includes(pref))
-            if (voice) break
+            if (!response.ok) throw new Error("TTS failed")
+
+            const blob = await response.blob()
+            const url = URL.createObjectURL(blob)
+
+            if (aiAudioRef.current) {
+                aiAudioRef.current.pause()
+                aiAudioRef.current = null
+            }
+
+            const audio = new Audio(url)
+            aiAudioRef.current = audio
+
+            audio.onended = () => {
+                setIsAiSpeaking(false)
+                URL.revokeObjectURL(url)
+            }
+
+            audio.onerror = () => {
+                setIsAiSpeaking(false)
+                console.error("Audio playback error")
+            }
+
+            await audio.play()
+
+        } catch (error) {
+            console.error("TTS Error:", error)
+            setIsAiSpeaking(false)
         }
-
-        // Fallback to any English voice that sounds male (avoid 'Zira', 'Female', 'Woman')
-        if (!voice) {
-            voice = voices.find(v =>
-                v.lang.startsWith('en') &&
-                !v.name.toLowerCase().includes('female') &&
-                !v.name.toLowerCase().includes('zira') &&
-                !v.name.toLowerCase().includes('woman') &&
-                !v.name.toLowerCase().includes('samantha')
-            )
-        }
-
-        // Ultimate fallback - any English voice
-        if (!voice) {
-            voice = voices.find(v => v.lang.startsWith('en'))
-        }
-
-        selectedVoiceRef.current = voice || null
-        return selectedVoiceRef.current
     }
 
-    const speakText = (text: string) => {
-        if (!('speechSynthesis' in window)) return
-
-        window.speechSynthesis.cancel()
-
-        const utterance = new SpeechSynthesisUtterance(text)
-        utterance.rate = 1.0
-        utterance.pitch = 1.0
-
-        // Use consistent voice
-        const voice = getConsistentVoice()
-        if (voice) utterance.voice = voice
-
-        utterance.onstart = () => setIsAiSpeaking(true)
-        utterance.onend = () => setIsAiSpeaking(false)
-        utterance.onerror = () => setIsAiSpeaking(false)
-
-        window.speechSynthesis.speak(utterance)
-    }
-
-    // Load voices when component mounts
+    // Stop audio on unmount
     useEffect(() => {
-        const loadVoices = () => {
-            window.speechSynthesis.getVoices()
-            getConsistentVoice()
-        }
-
-        loadVoices()
-        window.speechSynthesis.onvoiceschanged = loadVoices
-
         return () => {
-            window.speechSynthesis.onvoiceschanged = null
+            if (aiAudioRef.current) {
+                aiAudioRef.current.pause()
+            }
         }
     }, [])
 
@@ -184,7 +163,8 @@ export default function Conversation() {
             const latestMsg = initialTranscript[initialTranscript.length - 1]
             if (latestMsg.role === 'assistant' && initialTranscript.length === 1) {
                 const timer = setTimeout(() => {
-                    speakText(latestMsg.content)
+                    // Pass current sessionData character directly to avoid stale state issue
+                    speakText(latestMsg.content, sessionData.ai_character)
                 }, 500)
                 return () => clearTimeout(timer)
             }
@@ -364,8 +344,8 @@ export default function Conversation() {
     }
 
     const handleEndConversation = async () => {
-        if ("speechSynthesis" in window) {
-            window.speechSynthesis.cancel()
+        if (aiAudioRef.current) {
+            aiAudioRef.current.pause()
         }
 
         try {
@@ -394,12 +374,12 @@ export default function Conversation() {
     const lastMessage = state.transcript.length > 0 ? state.transcript[state.transcript.length - 1] : null
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white relative overflow-hidden flex flex-col font-sans">
+        <div className="min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col font-sans transition-colors duration-500">
             {/* Animated Background */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[20%] left-[20%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[120px] animate-pulse duration-[10s]" />
-                <div className="absolute bottom-[20%] right-[20%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] animate-pulse duration-[8s]" />
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
+                <div className="absolute top-[20%] left-[20%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] animate-pulse duration-[10s]" />
+                <div className="absolute bottom-[20%] right-[20%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] animate-pulse duration-[8s]" />
+                <div className="absolute inset-0 opacity-20 brightness-100 contrast-150 mix-blend-overlay dark:bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-none"></div>
             </div>
 
             {/* Header - Mobile responsive */}
@@ -409,18 +389,18 @@ export default function Conversation() {
                         variant="ghost"
                         size="icon"
                         onClick={() => navigate("/practice")}
-                        className="text-white hover:bg-white/10 rounded-full w-8 h-8 sm:w-10 sm:h-10 border border-white/5 backdrop-blur-md"
+                        className="text-foreground hover:bg-muted/20 rounded-full w-8 h-8 sm:w-10 sm:h-10 border border-border backdrop-blur-md"
                     >
                         <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                     </Button>
-                    <div className="bg-white/5 backdrop-blur-xl px-2 sm:px-4 py-1.5 sm:py-2 rounded-full border border-white/10 flex items-center gap-2 sm:gap-3 shadow-lg">
-                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${state.isRecording ? 'bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'}`} />
-                        <span className="text-xs sm:text-sm font-semibold tracking-wide text-slate-200 hidden xs:inline">
+                    <div className="bg-card/50 backdrop-blur-xl px-2 sm:px-4 py-1.5 sm:py-2 rounded-full border border-border flex items-center gap-2 sm:gap-3 shadow-lg">
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${state.isRecording ? 'bg-destructive animate-pulse shadow-[0_0_10px_oklch(from_var(--destructive)_l_c_h_/_0.5)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'}`} />
+                        <span className="text-xs sm:text-sm font-semibold tracking-wide text-foreground/80 hidden xs:inline">
                             {state.isRecording ? "Listening..." : isAiSpeaking ? "AI Speaking" : "Connected"}
                         </span>
-                        <div className="w-px h-3 sm:h-4 bg-white/10" />
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        <span className="text-xs sm:text-sm text-slate-400 font-mono tracking-wider">{formatTime(state.elapsedSeconds)}</span>
+                        <div className="w-px h-3 sm:h-4 bg-border" />
+                        <Clock className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-xs sm:text-sm text-muted-foreground font-mono tracking-wider">{formatTime(state.elapsedSeconds)}</span>
                     </div>
                 </div>
 
@@ -429,7 +409,7 @@ export default function Conversation() {
                         variant="ghost"
                         size="icon"
                         onClick={() => setState(prev => ({ ...prev, showTranscript: true }))}
-                        className="text-slate-400 hover:text-white rounded-full bg-white/5 border border-white/10 w-10 h-10 backdrop-blur-md"
+                        className="text-muted-foreground hover:text-foreground rounded-full bg-card/50 border border-border w-10 h-10 backdrop-blur-md"
                     >
                         <History className="h-5 w-5" />
                     </Button>
@@ -450,20 +430,20 @@ export default function Conversation() {
                 <div className="relative mb-8 sm:mb-16 group">
                     {/* Morphing Background Blob */}
                     <div className={`absolute -inset-8 sm:-inset-12 morph-blob blur-3xl transition-all duration-1000 ${state.isRecording
-                        ? 'bg-red-500/20'
+                        ? 'bg-destructive/20'
                         : isAiSpeaking
-                            ? 'bg-blue-500/25'
-                            : 'bg-indigo-500/10'
+                            ? 'bg-primary/25'
+                            : 'bg-indigo-500/10 dark:bg-indigo-500/10'
                         }`} />
 
                     {/* Ring Pulse Effect - Multiple Rings */}
                     {(state.isRecording || isAiSpeaking) && (
                         <>
-                            <div className={`absolute -inset-4 rounded-full border-2 animate-ring-pulse ${state.isRecording ? 'border-red-500/40' : 'border-blue-500/40'
+                            <div className={`absolute -inset-4 rounded-full border-2 animate-ring-pulse ${state.isRecording ? 'border-destructive/40' : 'border-primary/40'
                                 }`} />
-                            <div className={`absolute -inset-4 rounded-full border-2 animate-ring-pulse ${state.isRecording ? 'border-red-500/40' : 'border-blue-500/40'
+                            <div className={`absolute -inset-4 rounded-full border-2 animate-ring-pulse ${state.isRecording ? 'border-destructive/40' : 'border-primary/40'
                                 }`} style={{ animationDelay: '0.5s' }} />
-                            <div className={`absolute -inset-4 rounded-full border-2 animate-ring-pulse ${state.isRecording ? 'border-red-500/40' : 'border-blue-500/40'
+                            <div className={`absolute -inset-4 rounded-full border-2 animate-ring-pulse ${state.isRecording ? 'border-destructive/40' : 'border-primary/40'
                                 }`} style={{ animationDelay: '1s' }} />
                         </>
                     )}
@@ -476,10 +456,10 @@ export default function Conversation() {
                         }}
                         transition={{ duration: isAiSpeaking ? 1.5 : 3, repeat: Infinity, ease: "easeInOut" }}
                         className={`absolute -inset-6 sm:-inset-8 rounded-full blur-2xl transition-colors duration-700 ${state.isRecording
-                            ? 'bg-gradient-to-br from-red-500/40 to-rose-600/30'
+                            ? 'bg-gradient-to-br from-destructive/40 to-rose-600/30'
                             : isAiSpeaking
-                                ? 'bg-gradient-to-br from-blue-500/30 to-purple-500/30'
-                                : 'bg-blue-500/15'
+                                ? 'bg-gradient-to-br from-primary/30 to-purple-500/30'
+                                : 'bg-primary/5 dark:bg-blue-500/15'
                             }`}
                     />
 
@@ -494,10 +474,10 @@ export default function Conversation() {
                             rotate: { duration: 8, repeat: Infinity, ease: "linear" }
                         }}
                         className={`absolute -inset-4 sm:-inset-5 rounded-full border transition-colors duration-500 ${state.isRecording
-                            ? 'border-red-500/30'
+                            ? 'border-destructive/30'
                             : state.isProcessing
-                                ? 'border-dashed border-blue-500/40'
-                                : 'border-white/10'
+                                ? 'border-dashed border-primary/40'
+                                : 'border-border'
                             }`}
                     />
 
@@ -507,16 +487,16 @@ export default function Conversation() {
                             scale: isAiSpeaking ? [1, 1.04, 1] : state.isRecording ? [1, 1.02, 1] : 1,
                         }}
                         transition={{ duration: isAiSpeaking ? 0.8 : 2, repeat: Infinity, ease: "easeInOut" }}
-                        className={`w-36 h-36 sm:w-52 sm:h-52 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden transition-all duration-700 border border-white/10 ${!state.isRecording && !isAiSpeaking && !state.isProcessing ? 'animate-breathe' : ''
+                        className={`w-36 h-36 sm:w-52 sm:h-52 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden transition-all duration-700 border border-border ${!state.isRecording && !isAiSpeaking && !state.isProcessing ? 'animate-breathe' : ''
                             }`}
                         style={{
                             background: state.isRecording
-                                ? "linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #991b1b 100%)"
+                                ? "linear-gradient(135deg, oklch(from var(--destructive) l c h) 0%, oklch(from var(--destructive) l c h / 0.8) 100%)"
                                 : isAiSpeaking
-                                    ? "linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%)"
+                                    ? "linear-gradient(135deg, oklch(from var(--primary) l c h) 0%, oklch(from var(--primary) l c h / 0.8) 100%)"
                                     : state.isProcessing
-                                        ? "linear-gradient(135deg, #1e3a8a 0%, #312e81 50%, #1e1b4b 100%)"
-                                        : "linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #020617 100%)"
+                                        ? "linear-gradient(135deg, oklch(from var(--primary) l c h / 0.8) 0%, oklch(from var(--primary) l c h) 100%)"
+                                        : "var(--card)"
                         }}
                     >
                         {/* Internal Shine/Reflection */}
@@ -524,7 +504,7 @@ export default function Conversation() {
                         <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/50 to-transparent rounded-full" />
 
                         {/* Subtle Inner Glow */}
-                        <div className={`absolute inset-4 rounded-full blur-xl transition-opacity duration-500 ${isAiSpeaking ? 'bg-blue-400/20 opacity-100' : state.isRecording ? 'bg-red-400/20 opacity-100' : 'opacity-0'
+                        <div className={`absolute inset-4 rounded-full blur-xl transition-opacity duration-500 ${isAiSpeaking ? 'bg-primary/20 opacity-100' : state.isRecording ? 'bg-destructive/20 opacity-100' : 'opacity-0'
                             }`} />
 
                         {/* Content: Icon or Audio Visualizer */}
@@ -538,7 +518,7 @@ export default function Conversation() {
                                             className="audio-bar w-1.5 rounded-full"
                                             style={{
                                                 height: `${30 + Math.random() * 40}%`,
-                                                background: 'linear-gradient(180deg, #fff 0%, #fca5a5 100%)',
+                                                background: 'linear-gradient(180deg, var(--background) 0%, var(--destructive) 100%)',
                                                 animationDelay: `${i * 0.1}s`
                                             }}
                                         />
@@ -558,9 +538,9 @@ export default function Conversation() {
                                     ))}
                                 </div>
                             ) : state.isProcessing ? (
-                                <Sparkles className="w-16 h-16 text-blue-200 drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)] animate-spin-slow" />
+                                <Sparkles className="w-16 h-16 text-primary drop-shadow-[0_4px_8px_rgba(0,0,0,0.1)] animate-spin-slow" />
                             ) : (
-                                <Bot className="w-16 h-16 text-slate-400 drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)] group-hover:text-slate-300 transition-colors" />
+                                <Bot className="w-16 h-16 text-muted-foreground drop-shadow-[0_4px_8px_rgba(0,0,0,0.1)] group-hover:text-foreground transition-colors" />
                             )}
                         </div>
                     </motion.div>
@@ -577,11 +557,11 @@ export default function Conversation() {
                                 exit={{ opacity: 0, y: -20, filter: "blur(10px)" }}
                                 className="relative"
                             >
-                                <p className="text-3xl md:text-4xl font-semibold text-white/90 leading-tight tracking-tight">
+                                <p className="text-3xl md:text-4xl font-semibold text-foreground leading-tight tracking-tight">
                                     "{state.currentDraft}"
-                                    <span className="inline-block w-3 h-8 bg-blue-500/80 rounded-full animate-pulse ml-2 align-middle shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                                    <span className="inline-block w-3 h-8 bg-primary rounded-full animate-pulse ml-2 align-middle shadow-[0_0_10px_oklch(from_var(--primary)_l_c_h_/_0.5)]" />
                                 </p>
-                                <p className="text-sm text-slate-400 mt-4 font-medium uppercase tracking-widest">Listening...</p>
+                                <p className="text-sm text-muted-foreground mt-4 font-medium uppercase tracking-widest">Listening...</p>
                             </motion.div>
                         ) : lastMessage ? (
                             <motion.div
@@ -592,16 +572,16 @@ export default function Conversation() {
                                 className="relative"
                             >
                                 <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-6 border ${lastMessage.role === 'assistant'
-                                    ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
-                                    : 'bg-slate-700/30 border-slate-600/30 text-slate-400'
+                                    ? 'bg-primary/10 border-primary/20 text-primary'
+                                    : 'bg-muted/50 border-border text-muted-foreground'
                                     }`}>
                                     {lastMessage.role === 'assistant' ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
                                     {lastMessage.role === 'assistant' ? 'AI Coach' : 'You'}
                                 </div>
 
                                 <p className={`text-2xl md:text-4xl font-medium leading-tight tracking-tight ${lastMessage.role === 'assistant'
-                                    ? 'text-transparent bg-clip-text bg-gradient-to-r from-blue-100 via-blue-50 to-white drop-shadow-sm'
-                                    : 'text-slate-300'
+                                    ? 'text-foreground font-semibold drop-shadow-sm'
+                                    : 'text-muted-foreground'
                                     }`}>
                                     "{lastMessage.content}"
                                 </p>
@@ -612,7 +592,7 @@ export default function Conversation() {
                                 animate={{ opacity: 1 }}
                                 className="text-center"
                             >
-                                <p className="text-slate-500 text-xl font-medium">Tap the microphone to start the conversation</p>
+                                <p className="text-muted-foreground text-xl font-medium">Tap the microphone to start the conversation</p>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -629,21 +609,21 @@ export default function Conversation() {
                 <div className="relative group">
                     {/* Ripple Effect */}
                     {state.isRecording && (
-                        <div className="absolute inset-0 rounded-full bg-red-500/30 animate-ping duration-1000" />
+                        <div className="absolute inset-0 rounded-full bg-destructive/30 animate-ping duration-1000" />
                     )}
 
                     <Button
                         onClick={state.isRecording ? stopRecording : startRecording}
                         disabled={isAiSpeaking || state.isProcessing}
-                        className={`h-16 w-16 sm:h-24 sm:w-24 rounded-full shadow-2xl transition-all duration-300 relative z-10 border-4 border-slate-900 ${state.isRecording
-                            ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 scale-110 shadow-[0_0_40px_rgba(239,68,68,0.4)]"
-                            : "bg-white text-slate-900 hover:bg-slate-100 hover:scale-105 shadow-[0_0_30px_rgba(255,255,255,0.1)]"
+                        className={`h-16 w-16 sm:h-24 sm:w-24 rounded-full shadow-2xl transition-all duration-300 relative z-10 border-4 border-background ${state.isRecording
+                            ? "bg-gradient-to-br from-destructive to-red-600 hover:from-destructive hover:to-red-500 scale-110 shadow-[0_0_40px_oklch(from_var(--destructive)_l_c_h_/_0.4)]"
+                            : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 shadow-[0_0_30px_oklch(from_var(--primary)_l_c_h_/_0.3)]"
                             }`}
                     >
                         {state.isRecording ? (
                             <Square className="w-6 h-6 sm:w-10 sm:h-10 fill-current text-white" />
                         ) : (
-                            <Mic className="w-6 h-6 sm:w-10 sm:h-10 text-slate-900" />
+                            <Mic className="w-6 h-6 sm:w-10 sm:h-10 text-white" />
                         )}
                     </Button>
                 </div>
@@ -658,7 +638,7 @@ export default function Conversation() {
                             >
                                 <Button
                                     onClick={handleSend}
-                                    className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-xl shadow-blue-500/20 border border-white/10"
+                                    className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-500 text-white shadow-xl shadow-primary/20 border border-border"
                                 >
                                     <Send className="w-5 h-5 sm:w-7 sm:h-7 ml-0.5" />
                                 </Button>
@@ -677,19 +657,19 @@ export default function Conversation() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setState(prev => ({ ...prev, showTranscript: false }))}
-                            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+                            className="absolute inset-0 bg-background/60 backdrop-blur-sm"
                         />
                         <motion.div
                             initial={{ x: "100%" }}
                             animate={{ x: 0 }}
                             exit={{ x: "100%" }}
                             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                            className="relative w-full max-w-lg h-full bg-slate-900/90 backdrop-blur-xl border-l border-white/10 shadow-2xl flex flex-col"
+                            className="relative w-full max-w-lg h-full bg-card/90 backdrop-blur-xl border-l border-border shadow-2xl flex flex-col"
                         >
-                            <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
-                                <h3 className="text-xl font-bold text-white flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                                        <History className="w-5 h-5 text-blue-400" />
+                            <div className="p-6 border-b border-border flex justify-between items-center bg-card/5">
+                                <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                                        <History className="w-5 h-5 text-primary" />
                                     </div>
                                     Session Transcript
                                 </h3>
@@ -697,9 +677,9 @@ export default function Conversation() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => setState(prev => ({ ...prev, showTranscript: false }))}
-                                    className="hover:bg-white/10 rounded-full"
+                                    className="hover:bg-muted/10 rounded-full"
                                 >
-                                    <X className="w-5 h-5 text-slate-400" />
+                                    <X className="w-5 h-5 text-muted-foreground" />
                                 </Button>
                             </div>
 
@@ -712,17 +692,17 @@ export default function Conversation() {
                                         key={idx}
                                         className={`flex flex-col gap-2 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
                                     >
-                                        <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest ${msg.role === 'user' ? 'text-slate-500 flex-row-reverse' : 'text-blue-400'}`}>
+                                        <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest ${msg.role === 'user' ? 'text-muted-foreground flex-row-reverse' : 'text-primary'}`}>
                                             {msg.role === 'user' ? (
-                                                <>You <div className="w-6 h-[1px] bg-slate-700"></div></>
+                                                <>You <div className="w-6 h-[1px] bg-border"></div></>
                                             ) : (
-                                                <>AI Coach <div className="w-6 h-[1px] bg-blue-900"></div></>
+                                                <>AI Coach <div className="w-6 h-[1px] bg-primary/30"></div></>
                                             )}
                                         </div>
 
                                         <div className={`p-5 rounded-2xl max-w-[85%] text-sm leading-relaxed backdrop-blur-md border shadow-lg ${msg.role === 'user'
-                                            ? 'bg-white/10 border-white/5 text-slate-100 rounded-tr-sm'
-                                            : 'bg-gradient-to-br from-blue-600/20 to-indigo-600/20 border-blue-500/20 text-blue-50 rounded-tl-sm'
+                                            ? 'bg-card border-border text-foreground rounded-tr-sm'
+                                            : 'bg-primary/10 border-primary/20 text-foreground rounded-tl-sm'
                                             }`}>
                                             {msg.content}
                                         </div>

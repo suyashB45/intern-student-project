@@ -71,22 +71,22 @@ const Login: React.FC = () => {
                 className="w-full max-w-md card-ultra-glass relative z-10"
             >
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
+                    <h1 className="text-4xl font-bold text-foreground mb-2 tracking-tight">
                         Welcome <span className="text-ultra-gradient">Back</span>
                     </h1>
-                    <p className="text-gray-400">Sign in to continue your coaching journey</p>
+                    <p className="text-muted-foreground">Sign in to continue your coaching journey</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300 ml-1">Email or Username</label>
+                        <label className="text-sm font-medium text-muted-foreground ml-1">Email or Username</label>
                         <div className="relative group">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 transition-colors w-5 h-5" />
                             <input
                                 type="text"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-10 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all font-sans"
+                                className="w-full bg-input/50 border border-input rounded-xl px-10 py-3 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all font-sans"
                                 placeholder="name@company.com"
                                 required
                             />
@@ -95,8 +95,8 @@ const Login: React.FC = () => {
 
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                            <label className="text-sm font-medium text-gray-300 ml-1">Password</label>
-                            <Link to="/forgot-password" className="text-xs text-purple-400 hover:text-purple-300 transition-colors">Forgot password?</Link>
+                            <label className="text-sm font-medium text-muted-foreground ml-1">Password</label>
+                            <Link to="/forgot-password" className="text-xs text-primary hover:text-primary/80 transition-colors">Forgot password?</Link>
                         </div>
                         <div className="relative group">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 transition-colors w-5 h-5" />
@@ -104,7 +104,7 @@ const Login: React.FC = () => {
                                 type={showPassword ? "text" : "password"}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-10 py-3 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all font-sans"
+                                className="w-full bg-input/50 border border-input rounded-xl px-10 py-3 pr-12 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all font-sans"
                                 placeholder="••••••••"
                                 required
                             />
@@ -136,10 +136,10 @@ const Login: React.FC = () => {
                 </form>
 
                 <div className="mt-6 text-center">
-                    <p className="text-gray-400 text-sm">
+                    <p className="text-muted-foreground text-sm">
                         Don't have an account?{' '}
-                        <Link to="/signup" className="text-purple-400 hover:text-purple-300 font-medium hover:underline transition-all">
-                            Create an account
+                        <Link to="/signup" className="text-primary hover:text-primary/80 font-medium hover:underline transition-all">
+                            Sign up
                         </Link>
                     </p>
                 </div>

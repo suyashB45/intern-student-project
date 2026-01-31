@@ -24,7 +24,7 @@ const HowItWorksSection = () => {
     ];
 
     return (
-        <section className="relative py-24 overflow-hidden bg-slate-950" id="how-it-works">
+        <section className="relative py-12 overflow-hidden bg-background" id="how-it-works">
             {/* Background Gradients */}
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
@@ -34,7 +34,7 @@ const HowItWorksSection = () => {
             <div className="container mx-auto px-6 relative z-10">
                 <div className="text-center mb-16">
                     <motion.div
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-400/30 rounded-full text-sm font-medium text-blue-300 mb-6"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/5 border border-blue-400/15 rounded-full text-sm font-bold text-slate-950 dark:text-blue-300 mb-6"
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
@@ -44,7 +44,7 @@ const HowItWorksSection = () => {
                     </motion.div>
 
                     <motion.h2
-                        className="text-4xl md:text-5xl font-bold text-white mb-6"
+                        className="text-4xl md:text-5xl font-bold text-foreground mb-6"
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
@@ -54,7 +54,7 @@ const HowItWorksSection = () => {
                     </motion.h2>
 
                     <motion.p
-                        className="text-xl text-slate-400 max-w-2xl mx-auto"
+                        className="text-lg text-muted-foreground max-w-2xl mx-auto"
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
@@ -79,16 +79,16 @@ const HowItWorksSection = () => {
                         >
                             <div className={`card-ultra-glass h-full text-center relative group hover:border-${step.color}-500/30 transition-colors duration-500`}>
                                 {/* Step Number */}
-                                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-slate-900 border border-slate-700 rounded-full flex items-center justify-center font-bold text-xl text-slate-400 z-10 group-hover:border-white/20 group-hover:text-white transition-all">
+                                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-card border border-border rounded-full flex items-center justify-center font-bold text-xl text-muted-foreground z-10 group-hover:border-primary/20 group-hover:text-foreground transition-all">
                                     {index + 1}
                                 </div>
 
-                                <div className={`w-20 h-20 mx-auto mt-6 mb-6 rounded-2xl bg-${step.color}-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                                    <step.icon className={`w-10 h-10 text-${step.color}-400`} />
+                                <div className={`w-20 h-20 mx-auto mt-6 mb-6 rounded-2xl ${index === 2 ? 'bg-pink-50 dark:bg-pink-900/10' : `bg-${step.color}-500/10`} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                                    <step.icon className={`w-10 h-10 ${index === 2 ? 'text-pink-500 drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]' : `text-${step.color}-400`}`} />
                                 </div>
 
-                                <h3 className="text-2xl font-bold text-white mb-4">{step.title}</h3>
-                                <p className="text-slate-400 leading-relaxed">
+                                <h3 className="text-2xl font-bold text-foreground mb-4">{step.title}</h3>
+                                <p className="text-muted-foreground leading-relaxed">
                                     {step.description}
                                 </p>
                             </div>

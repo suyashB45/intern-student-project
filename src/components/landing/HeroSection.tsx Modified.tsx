@@ -110,13 +110,13 @@ const HeroSection = () => {
 
                         {/* Headline */}
                         <motion.h1
-                            className="text-3xl sm:text-5xl lg:text-7xl font-bold mb-6 leading-tight"
+                            className="text-4xl sm:text-7xl lg:text-8xl font-bold mb-6 leading-tight"
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 }}
                         >
-                            <span className="text-foreground block">AI-Powered Coaching  </span>
-                            <span className="block text-gradient-animate text-glow">for Real World Conversation</span>
+                            <span className="text-foreground block">AI-Powered Coaching </span>
+                            <span className="block text-gradient-animate text-glow">for Real-World Conversations</span>
                         </motion.h1>
 
                         {/* Subheadline */}
@@ -155,7 +155,26 @@ const HeroSection = () => {
                             </motion.button>
                         </motion.div>
 
-
+                        {/* Trust Indicators */}
+                        <motion.div
+                            className="flex flex-col sm:flex-row items-center gap-8 text-muted-foreground justify-center lg:justify-start"
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.6 }}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Users className="w-5 h-5 text-blue-400" />
+                                <span className="text-sm font-medium">10,000+ Users</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Zap className="w-5 h-5 text-purple-400" />
+                                <span className="text-sm font-medium">99.9% Uptime</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                                <span className="text-sm font-medium">4.9/5 Rating</span>
+                            </div>
+                        </motion.div>
                     </motion.div>
 
                     {/* Right Content - 3D Scene */}

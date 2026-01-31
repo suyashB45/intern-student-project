@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 const FeaturesSection = () => {
     const ref = useRef(null);
-    const isInView = useInView(ref, { once: true, amount: 0.3 });
+    const isInView = useInView(ref, { once: true, amount: 0.1 });
     const navigate = useNavigate();
 
     const features = [
@@ -48,17 +48,17 @@ const FeaturesSection = () => {
     ];
 
     return (
-        <section ref={ref} className="relative section-enhanced py-24" id="features">
+        <section ref={ref} className="relative section-enhanced py-12" id="features">
             {/* Background */}
-            <div className="absolute inset-0 bg-slate-900 pointer-events-none -z-10">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(139,92,246,0.1),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(236,72,153,0.1),transparent_50%)]" />
+            <div className="absolute inset-0 bg-background pointer-events-none -z-10">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,oklch(from_var(--primary)_l_c_h_/_0.1),transparent_50%),radial-gradient(circle_at_80%_70%,oklch(from_var(--secondary)_l_c_h_/_0.1),transparent_50%)]" />
             </div>
 
             <div className="container mx-auto px-6 relative z-10">
                 <div className="text-center mb-16">
                     {/* Badge */}
                     <motion.div
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 border border-purple-400/30 rounded-full text-sm font-medium text-purple-300 mb-8"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/5 border border-purple-400/15 rounded-full text-sm font-bold text-slate-950 dark:text-purple-300 mb-8"
                         initial={{ opacity: 0, y: 20 }}
                         animate={isInView ? { opacity: 1, y: 0 } : {}}
                         transition={{ delay: 0.1 }}
@@ -68,19 +68,19 @@ const FeaturesSection = () => {
 
                     {/* Main Heading */}
                     <motion.h2
-                        className="text-4xl lg:text-5xl font-bold mb-8 leading-tight text-white"
+                        className="text-4xl lg:text-5xl font-bold mb-8 leading-tight text-foreground"
                         initial={{ opacity: 0, y: 30 }}
                         animate={isInView ? { opacity: 1, y: 0 } : {}}
                         transition={{ delay: 0.2 }}
                     >
-                        <span className="text-white">Powerful Features</span>
+                        <span className="text-foreground">Powerful Features</span>
                         <br />
-                        <span className="text-ultra-gradient">for Your Growth</span>
+                        <span className="text-ultra-gradient">for Performance Improvement</span>
                     </motion.h2>
 
                     {/* Subheading */}
                     <motion.p
-                        className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed"
+                        className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed"
                         initial={{ opacity: 0, y: 30 }}
                         animate={isInView ? { opacity: 1, y: 0 } : {}}
                         transition={{ delay: 0.3 }}
@@ -103,10 +103,10 @@ const FeaturesSection = () => {
                             <div className={`w-16 h-16 bg-gradient-to-br ${feature.gradient} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                                 <feature.icon className="w-8 h-8 text-white" />
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-4">
+                            <h3 className="text-xl font-bold text-foreground mb-4">
                                 {feature.title}
                             </h3>
-                            <p className="text-slate-300 leading-relaxed">
+                            <p className="text-muted-foreground leading-relaxed">
                                 {feature.description}
                             </p>
                         </motion.div>
@@ -120,10 +120,10 @@ const FeaturesSection = () => {
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
                     transition={{ delay: 0.8 }}
                 >
-                    <h3 className="text-3xl font-bold text-white mb-6">
-                        Ready to Transform Your Life?
+                    <h3 className="text-3xl font-bold text-foreground mb-6">
+                        Ready for Real-world communication scenarios?
                     </h3>
-                    <p className="text-slate-300 mb-8 max-w-2xl mx-auto">
+                    <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
                         Join thousands of users who are already experiencing the power of AI-driven personal development.
                     </p>
                     <motion.button
